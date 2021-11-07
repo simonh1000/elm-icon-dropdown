@@ -1,0 +1,12 @@
+.idea
+.DS_Store
+
+node_modules
+elm-stuff
+package-lock.json
+
+
+dist
+release
+
+ignore
