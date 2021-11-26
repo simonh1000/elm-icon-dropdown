@@ -5,6 +5,7 @@ import DropDown as D
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
+import List as L
 
 
 
@@ -14,14 +15,14 @@ import Html.Events exposing (onClick)
 
 
 type alias Model =
-    { counter : Int
-    , serverMessage : String
+    { dState : D.State
+    , selectedVal : String
     }
 
 
 init : Int -> ( Model, Cmd Msg )
-init flags =
-    ( { counter = flags, serverMessage = "" }, Cmd.none )
+init _ =
+    ( { dState = D.init, selectedVal = "" }, Cmd.none )
 
 
 
@@ -31,19 +32,19 @@ init flags =
 
 
 type Msg
-    = Inc
+    = OnDropDownClick D.State (Maybe String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        Inc ->
-            ( add1 model, Cmd.none )
-
-
-add1 : Model -> Model
-add1 model =
-    { model | counter = model.counter + 1 }
+        OnDropDownClick dState mbVal ->
+            ( { model
+                | dState = dState
+                , selectedVal = mbVal |> Maybe.withDefault model.selectedVal
+              }
+            , Cmd.none
+            )
 
 
 
@@ -54,13 +55,20 @@ add1 model =
 
 view : Model -> Html Msg
 view model =
+    let
+        mkItem s =
+            { icon = text "*", key = s, displayName = s }
+
+        items =
+            L.map mkItem [ "alpha", "beta", "gamma" ]
+    in
     div [ class "container p-2" ]
         [ header [ class "grid-cols-3" ]
             [ h1 [ class "text-2xl font-bold ml-2" ] [ text "My Form" ]
             ]
-        , D.view () [ "alpha", "beta", "gamma" ] "alpha"
+        , D.view OnDropDownClick model.dState items model.selectedVal
         , div [ class "flex flex-col" ]
-            [ h2 [] [ text "hello header 2" ] ]
+            [ div [] [ text <| "You chose " ++ model.selectedVal ] ]
         ]
 
 
