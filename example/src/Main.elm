@@ -4,7 +4,6 @@ import Browser
 import DropDown as D
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
 import List as L
 
 
@@ -57,7 +56,7 @@ view : Model -> Html Msg
 view model =
     let
         mkItem s =
-            { icon = text "*", key = s, displayName = s }
+            { icon = matIcon "plus", key = s, displayName = s }
 
         items =
             L.map mkItem [ "alpha", "beta", "gamma" ]
@@ -70,6 +69,11 @@ view model =
         , div [ class "flex flex-col" ]
             [ div [] [ text <| "You chose " ++ model.selectedVal ] ]
         ]
+
+
+matIcon : String -> Html msg
+matIcon title =
+    span [ class <| "mdi mdi-" ++ title ] []
 
 
 

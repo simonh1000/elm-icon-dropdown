@@ -67,7 +67,6 @@ view constructor state lst val =
         header =
             div
                 [ class "dropdown-current"
-                , tabindex 0
                 ]
                 [ span [ style "marginRight" "5px" ] [ text val_ ]
                 , span
@@ -90,7 +89,11 @@ view constructor state lst val =
                 ]
 
         Nothing ->
-            div [ class "dropdown-container" ] [ header ]
+            div
+                [ class "dropdown-container"
+                , tabindex 0
+                ]
+                [ header ]
 
 
 moveUp : List String -> String -> String
