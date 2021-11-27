@@ -10,7 +10,10 @@ import Svg.Attributes as Attrs
 
 
 type alias State =
-    { expanded : Maybe String }
+    { expanded : Maybe String
+
+    -- expandOnHover: Bool
+    }
 
 
 init : State
@@ -38,22 +41,6 @@ view constructor state lst val =
             else
                 val
 
-        mkItem : String -> Item msg -> Html msg
-        mkItem hovered item =
-            li
-                [ onClick <| constructor { state | expanded = Nothing } (Just item.key)
-                , classList [ ( "selected", item.key == hovered ) ]
-                ]
-                [ item.icon, span [ class "dropdown-title" ] [ text item.displayName ] ]
-
-        tagger hovered idx =
-            case keyHandler keys state hovered idx of
-                Ok ( state_, return ) ->
-                    Decode.succeed <| constructor state_ return
-
-                Err err ->
-                    Decode.fail err
-
         header =
             div
                 [ class "dropdown-current" ]
@@ -69,10 +56,26 @@ view constructor state lst val =
                     text ""
                 ]
 
-        mkFinal hovered htm =
+        mkItem : String -> Item msg -> Html msg
+        mkItem hovered item =
+            li
+                [ onClick <| constructor { state | expanded = Nothing } (Just item.key)
+                , classList [ ( "selected", item.key == hovered ) ]
+                ]
+                [ item.icon, span [ class "dropdown-title" ] [ text item.displayName ] ]
+
+        tagger keyCode =
+            case keyHandler keys state keyCode of
+                Ok ( state_, return ) ->
+                    Decode.succeed <| constructor state_ return
+
+                Err err ->
+                    Decode.fail err
+
+        mkFinal htm =
             div
                 [ class "dropdown-container"
-                , onKeyDown (tagger hovered)
+                , onKeyDown tagger
                 , -- close without setting a new value
                   onBlur <| constructor { state | expanded = Nothing } Nothing
                 , tabindex 0
@@ -86,31 +89,36 @@ view constructor state lst val =
             lst
                 |> L.map (mkItem hovered)
                 |> ul [ class "dropdown-list" ]
-                |> mkFinal hovered
+                |> mkFinal
 
         Nothing ->
-            mkFinal "" (text "")
+            mkFinal (text "")
 
 
-keyHandler : List String -> State -> String -> Int -> Result String ( State, Maybe String )
-keyHandler keys state hovered idx =
-    case idx of
+keyHandler : List String -> State -> Int -> Result String ( State, Maybe String )
+keyHandler keys state keyCode =
+    case keyCode of
         38 ->
-            -- up
-            Ok ( { state | expanded = Just <| moveUp keys hovered }, Nothing )
+            -- up (only makes sense when menu is open)
+            Ok ( { state | expanded = Maybe.map (moveUp keys) state.expanded }, Nothing )
 
         40 ->
             -- down
-            Ok ( { state | expanded = Just <| moveDown keys hovered }, Nothing )
+            Ok ( { state | expanded = Just <| moveDown keys <| Maybe.withDefault "" state.expanded }, Nothing )
 
         13 ->
             -- enter
-            if state.expanded == Nothing then
-                -- ignore when dropdown not open
-                Err "Block enter when not open"
+            case state.expanded of
+                Just hovered ->
+                    Ok ( { state | expanded = Nothing }, Just hovered )
 
-            else
-                Ok ( { state | expanded = Nothing }, Just hovered )
+                Nothing ->
+                    -- ignore when dropdown not open
+                    Err "Block enter when not open"
+
+        27 ->
+            -- close without changing value
+            Ok ( { state | expanded = Nothing }, Nothing )
 
         _ ->
             Err "Unused key"

@@ -21,7 +21,11 @@ type alias Model =
 
 init : Int -> ( Model, Cmd Msg )
 init _ =
-    ( { dState = D.init, selectedVal = "" }, Cmd.none )
+    ( { dState = D.init
+      , selectedVal = ""
+      }
+    , Cmd.none
+    )
 
 
 
@@ -62,10 +66,8 @@ view model =
             L.map mkItem [ "alpha", "beta", "gamma" ]
     in
     div [ class "container p-2" ]
-        [ header [ class "grid-cols-3" ]
-            [ h1 [ class "text-2xl font-bold ml-2" ] [ text "My Form" ]
-            ]
-        , div [ class "flex flex-row" ]
+        [ h1 [ class "text-2xl font-bold ml-2" ] [ text "My Form" ]
+        , div [ class "flex flex-row items-center" ]
             [ formWrapper "name" <| input [] []
             , formWrapper "state" <| D.view OnDropDownClick model.dState items model.selectedVal
             , formWrapper "city" <| input [] []
@@ -75,6 +77,7 @@ view model =
         ]
 
 
+formWrapper : String -> Html msg -> Html msg
 formWrapper title htm =
     div [ class "ml-1 flex flex-col" ]
         [ h4 [ class "font-grey" ] [ text title ]
