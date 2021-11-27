@@ -36,6 +36,7 @@ view constructor state lst val =
 
         val_ =
             if val == "" then
+                -- TODO remove as we can't hard-code english
                 "Select ..."
 
             else
@@ -47,7 +48,8 @@ view constructor state lst val =
                 [ span [ style "marginRight" "5px" ] [ text val_ ]
                 , if L.length keys > 0 then
                     span
-                        [ onClick <| constructor { state | expanded = toggleOpen state.expanded } Nothing
+                        [ -- closing here does NOT change value
+                          onClick <| constructor { state | expanded = toggleOpen val state.expanded } Nothing
                         , class "dropdown-toggle"
                         ]
                         [ downArrow ]
@@ -97,30 +99,27 @@ view constructor state lst val =
 
 keyHandler : List String -> State -> Int -> Result String ( State, Maybe String )
 keyHandler keys state keyCode =
-    case keyCode of
-        38 ->
-            -- up (only makes sense when menu is open)
-            Ok ( { state | expanded = Maybe.map (moveUp keys) state.expanded }, Nothing )
-
-        40 ->
+    case ( state.expanded, keyCode ) of
+        ( _, 40 ) ->
             -- down
             Ok ( { state | expanded = Just <| moveDown keys <| Maybe.withDefault "" state.expanded }, Nothing )
 
-        13 ->
+        ( Nothing, _ ) ->
+            Err "Unused key"
+
+        ( Just hovered, 38 ) ->
+            -- up
+            Ok ( { state | expanded = Just <| moveUp keys hovered }, Nothing )
+
+        ( Just hovered, 13 ) ->
             -- enter
-            case state.expanded of
-                Just hovered ->
-                    Ok ( { state | expanded = Nothing }, Just hovered )
+            Ok ( { state | expanded = Nothing }, Just hovered )
 
-                Nothing ->
-                    -- ignore when dropdown not open
-                    Err "Block enter when not open"
-
-        27 ->
+        ( Just _, 27 ) ->
             -- close without changing value
             Ok ( { state | expanded = Nothing }, Nothing )
 
-        _ ->
+        ( Just _, _ ) ->
             Err "Unused key"
 
 
@@ -161,14 +160,14 @@ moveDown lst curr =
             curr
 
 
-toggleOpen : Maybe a -> Maybe String
-toggleOpen expanded =
+toggleOpen : String -> Maybe String -> Maybe String
+toggleOpen startVal expanded =
     case expanded of
         Just _ ->
             Nothing
 
         Nothing ->
-            Just ""
+            Just startVal
 
 
 {-| we want to filter which keys are handled, so we need a custom eventHandler
