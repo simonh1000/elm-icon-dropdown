@@ -65,9 +65,20 @@ view model =
         [ header [ class "grid-cols-3" ]
             [ h1 [ class "text-2xl font-bold ml-2" ] [ text "My Form" ]
             ]
-        , D.view OnDropDownClick model.dState items model.selectedVal
+        , div [ class "flex flex-row" ]
+            [ formWrapper "name" <| input [] []
+            , formWrapper "state" <| D.view OnDropDownClick model.dState items model.selectedVal
+            , formWrapper "city" <| input [] []
+            ]
         , div [ class "flex flex-col" ]
             [ div [] [ text <| "You chose " ++ model.selectedVal ] ]
+        ]
+
+
+formWrapper title htm =
+    div [ class "ml-1 flex flex-col" ]
+        [ h4 [ class "font-grey" ] [ text title ]
+        , htm
         ]
 
 

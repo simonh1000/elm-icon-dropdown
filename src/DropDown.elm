@@ -2,8 +2,8 @@ module DropDown exposing (..)
 
 import Html exposing (..)
 import Html.Attributes exposing (class, classList, style, tabindex)
-import Html.Events as Events exposing (onClick)
-import Json.Decode as Decode
+import Html.Events as Events exposing (onBlur, onClick)
+import Json.Decode as Decode exposing (Decoder)
 import List as L
 import Svg exposing (svg)
 import Svg.Attributes as Attrs
@@ -42,58 +42,78 @@ view constructor state lst val =
         mkItem hovered item =
             li
                 [ onClick <| constructor { state | expanded = Nothing } (Just item.key)
-                , tabindex 0
                 , classList [ ( "selected", item.key == hovered ) ]
                 ]
                 [ item.icon, span [ class "dropdown-title" ] [ text item.displayName ] ]
 
         tagger hovered idx =
-            case Debug.log "idx" idx of
-                38 ->
-                    -- up
-                    constructor { state | expanded = Just <| moveUp keys hovered } Nothing
+            case keyHandler keys state hovered idx of
+                Ok ( state_, return ) ->
+                    Decode.succeed <| constructor state_ return
 
-                40 ->
-                    -- down
-                    constructor { state | expanded = Just <| moveDown keys hovered } Nothing
-
-                13 ->
-                    -- enter
-                    constructor { state | expanded = Nothing } (Just hovered)
-
-                _ ->
-                    constructor state Nothing
+                Err err ->
+                    Decode.fail err
 
         header =
             div
-                [ class "dropdown-current"
-                ]
+                [ class "dropdown-current" ]
                 [ span [ style "marginRight" "5px" ] [ text val_ ]
-                , span
-                    [ onClick <| constructor { state | expanded = toggleOpen state.expanded } Nothing
-                    , class "dropdown-toggle"
-                    ]
-                    [ downArrow ]
+                , if L.length keys > 0 then
+                    span
+                        [ onClick <| constructor { state | expanded = toggleOpen state.expanded } Nothing
+                        , class "dropdown-toggle"
+                        ]
+                        [ downArrow ]
+
+                  else
+                    text ""
+                ]
+
+        mkFinal hovered htm =
+            div
+                [ class "dropdown-container"
+                , onKeyDown (tagger hovered)
+                , -- close without setting a new value
+                  onBlur <| constructor { state | expanded = Nothing } Nothing
+                , tabindex 0
+                ]
+                [ header
+                , htm
                 ]
     in
     case state.expanded of
         Just hovered ->
-            div
-                [ class "dropdown-container"
-                , onKeyDown (tagger hovered)
-                ]
-                [ header
-                , lst
-                    |> L.map (mkItem hovered)
-                    |> ul [ class "dropdown-list" ]
-                ]
+            lst
+                |> L.map (mkItem hovered)
+                |> ul [ class "dropdown-list" ]
+                |> mkFinal hovered
 
         Nothing ->
-            div
-                [ class "dropdown-container"
-                , tabindex 0
-                ]
-                [ header ]
+            mkFinal "" (text "")
+
+
+keyHandler : List String -> State -> String -> Int -> Result String ( State, Maybe String )
+keyHandler keys state hovered idx =
+    case idx of
+        38 ->
+            -- up
+            Ok ( { state | expanded = Just <| moveUp keys hovered }, Nothing )
+
+        40 ->
+            -- down
+            Ok ( { state | expanded = Just <| moveDown keys hovered }, Nothing )
+
+        13 ->
+            -- enter
+            if state.expanded == Nothing then
+                -- ignore when dropdown not open
+                Err "Block enter when not open"
+
+            else
+                Ok ( { state | expanded = Nothing }, Just hovered )
+
+        _ ->
+            Err "Unused key"
 
 
 moveUp : List String -> String -> String
@@ -143,9 +163,11 @@ toggleOpen expanded =
             Just ""
 
 
-onKeyDown : (Int -> msg) -> Attribute msg
+{-| we want to filter which keys are handled, so we need a custom eventHandler
+-}
+onKeyDown : (Int -> Decoder msg) -> Attribute msg
 onKeyDown tagger =
-    Events.on "keydown" (Decode.map tagger Events.keyCode)
+    Events.on "keydown" (Decode.andThen tagger Events.keyCode)
 
 
 downArrow : Html msg
