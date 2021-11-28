@@ -17,8 +17,7 @@ module.exports = (withDebug) => {
         },
         plugins: [
             new HtmlWebpackPlugin({
-                title: 'Updated by Elm',
-                template: 'src/index.html'
+                template: "./src/index.html"
             }),
             new CleanWebpackPlugin(),
         ],

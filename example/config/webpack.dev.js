@@ -7,11 +7,23 @@ const common = require('./webpack.common.js');
 const dev = {
     mode: 'development',
     devServer: {
-        port: 3000,
-        hot: true,
-        static: path.join(__dirname, "../src/assets"),
+        hot: "only",
         client: {
-            overlay: false
+            logging: "info"
+        },
+        static: {directory: path.join(__dirname, "../src/assets")},
+        devMiddleware: {
+            publicPath: "/",
+            stats: "errors-only"
+        },
+        historyApiFallback: true,
+        // feel free to delete this section if you don't need anything like this
+        onBeforeSetupMiddleware: function (devServer) {
+            // on port 3000
+            devServer.app.get("/test", function (req, res) {
+                res.json({result: "You reached the dev server"});
+            });
+
         }
     },
 };
