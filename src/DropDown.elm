@@ -13,6 +13,7 @@ type alias State =
     { expanded : Maybe String
 
     -- expandOnHover: Bool
+    -- permitUnsetting: Bool
     }
 
 
@@ -24,33 +25,37 @@ init =
 type alias Item msg =
     { icon : Html msg
     , key : String
-    , displayName : String
+    , display : String
     }
 
 
 view : (State -> Maybe String -> msg) -> State -> List (Item msg) -> String -> Html msg
-view constructor state lst val =
+view constructor state lst currKey =
     let
         keys =
             L.map .key lst
 
-        val_ =
-            if val == "" then
-                -- TODO remove as we can't hard-code english
-                "Select ..."
-
-            else
-                val
-
         header =
+            let
+                ( attrs, display ) =
+                    case lst |> L.filter (.key >> (==) currKey) |> L.head of
+                        Just currItem ->
+                            ( [ style "marginRight" "5px" ], text currItem.display )
+
+                        Nothing ->
+                            ( [ style "marginRight" "5px", style "fontStyle" "italic" ]
+                            , text currKey
+                            )
+            in
             div
-                [ class "dropdown-current" ]
-                [ span [ style "marginRight" "5px" ] [ text val_ ]
+                [ -- closing here does NOT change value
+                  onClick <| constructor { state | expanded = toggleOpen currKey state.expanded } Nothing
+                , class "dropdown-current"
+                ]
+                [ span attrs [ display ]
                 , if L.length keys > 0 then
                     span
-                        [ -- closing here does NOT change value
-                          onClick <| constructor { state | expanded = toggleOpen val state.expanded } Nothing
-                        , class "dropdown-toggle"
+                        [ class "dropdown-toggle"
                         ]
                         [ downArrow ]
 
@@ -64,10 +69,11 @@ view constructor state lst val =
                 [ onClick <| constructor { state | expanded = Nothing } (Just item.key)
                 , classList [ ( "selected", item.key == hovered ) ]
                 ]
-                [ item.icon, span [ class "dropdown-title" ] [ text item.displayName ] ]
+                [ item.icon, text item.display ]
 
+        tagger : Int -> Decoder msg
         tagger keyCode =
-            case keyHandler keys state keyCode of
+            case keyHandler keys state currKey keyCode of
                 Ok ( state_, return ) ->
                     Decode.succeed <| constructor state_ return
 
@@ -88,6 +94,7 @@ view constructor state lst val =
     in
     case state.expanded of
         Just hovered ->
+            -- TODO use keyed?
             lst
                 |> L.map (mkItem hovered)
                 |> ul [ class "dropdown-list" ]
@@ -97,12 +104,16 @@ view constructor state lst val =
             mkFinal (text "")
 
 
-keyHandler : List String -> State -> Int -> Result String ( State, Maybe String )
-keyHandler keys state keyCode =
+keyHandler : List String -> State -> String -> Int -> Result String ( State, Maybe String )
+keyHandler keys state currKey keyCode =
     case ( state.expanded, keyCode ) of
-        ( _, 40 ) ->
+        ( Just hovered, 40 ) ->
             -- down
-            Ok ( { state | expanded = Just <| moveDown keys <| Maybe.withDefault "" state.expanded }, Nothing )
+            Ok ( { state | expanded = Just <| moveDown keys hovered }, Nothing )
+
+        ( Nothing, 40 ) ->
+            -- down (like DOM select, open with current value)
+            Ok ( { state | expanded = Just <| Maybe.withDefault currKey state.expanded }, Nothing )
 
         ( Nothing, _ ) ->
             Err "Unused key"
@@ -124,40 +135,37 @@ keyHandler keys state keyCode =
 
 
 moveUp : List String -> String -> String
-moveUp lst curr =
+moveUp lst currKey =
     case lst of
         hd :: nxt :: tl ->
-            if curr == nxt then
+            if currKey == nxt then
                 hd
 
             else
-                moveUp (nxt :: tl) curr
+                moveUp (nxt :: tl) currKey
 
         [ _ ] ->
             ""
 
         [] ->
-            curr
+            currKey
 
 
 moveDown : List String -> String -> String
-moveDown lst curr =
+moveDown lst currKey =
     case lst of
         hd :: nxt :: tl ->
-            if curr == "" then
-                hd
-
-            else if curr == hd then
+            if currKey == hd then
                 nxt
 
             else
-                moveDown (nxt :: tl) curr
+                moveDown (nxt :: tl) currKey
 
         [ hd ] ->
             hd
 
         [] ->
-            curr
+            currKey
 
 
 toggleOpen : String -> Maybe String -> Maybe String

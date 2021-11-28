@@ -4,6 +4,7 @@ import Browser
 import DropDown as D
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onInput)
 import List as L
 
 
@@ -36,6 +37,7 @@ init _ =
 
 type Msg
     = OnDropDownClick D.State (Maybe String)
+    | OnSelect String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -49,6 +51,9 @@ update message model =
             , Cmd.none
             )
 
+        OnSelect string ->
+            ( { model | selectedVal = string }, Cmd.none )
+
 
 
 -- ---------------------------
@@ -56,21 +61,35 @@ update message model =
 -- ---------------------------
 
 
+options : List ( String, String )
+options =
+    [ ( "", "Select...." )
+    , ( "alpha", "Alpha" )
+    , ( "beta", "Beta" )
+    , ( "gamma", "Gamma" )
+    ]
+
+
 view : Model -> Html Msg
 view model =
     let
-        mkItem s =
-            { icon = matIcon "plus", key = s, displayName = s }
+        mkItem ( key, display ) =
+            { key = key, display = display, icon = matIcon "plus" }
 
         items =
-            L.map mkItem [ "alpha", "beta", "gamma" ]
+            L.map mkItem options
     in
     div [ class "container p-2" ]
         [ h1 [ class "text-2xl font-bold ml-2" ] [ text "My Form" ]
         , div [ class "flex flex-row items-center" ]
             [ formWrapper "name" <| input [] []
-            , formWrapper "state" <| D.view OnDropDownClick model.dState items model.selectedVal
+            , formWrapper "state (my dropdown)" <| D.view OnDropDownClick model.dState items model.selectedVal
             , formWrapper "city" <| input [] []
+            , formWrapper "State (browser dropdown)" <|
+                select [ onInput OnSelect ] <|
+                    L.map
+                        (\item -> option [ value item.key, selected (item.key == model.selectedVal) ] [ text item.display ])
+                        items
             ]
         , div [ class "flex flex-col" ]
             [ div [] [ text <| "You chose " ++ model.selectedVal ] ]
