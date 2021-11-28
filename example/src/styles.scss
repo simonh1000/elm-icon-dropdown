@@ -1,12 +1,32 @@
 
 body {
-  margin-top: 20px;
+  padding: 20px;
 }
 
 .dropdown-container {
   position: relative;
   width: 150px;
+  &:focus {
+    /* Provide a fallback style for browsers
+       that don't support :focus-visible */
+    outline: 2px solid rgb(0, 95, 204);
+    background: lightgrey;
+  }
 
+  &:focus:not(:focus-visible) {
+    /* Remove the focus indicator on mouse-focus for browsers
+       that do support :focus-visible */
+    background: transparent;
+  }
+
+  &:focus-visible {
+    /* Draw a very noticeable focus style for
+       keyboard-focus on browsers that do support
+       :focus-visible */
+    outline: 2px solid rgb(0, 95, 204);
+    -moz-outline-radius: 3px;
+    background: transparent;
+  }
   & > * {
     width: 100%
   }
@@ -20,8 +40,9 @@ body {
   }
 
   .dropdown-toggle {
-    padding: 3px;
-    background-color: #f8d6af;
+    padding: 1px;
+    background-color: #f8f3ed;
+    border-radius: 100%;
   }
 
   ul.dropdown-list {
@@ -41,18 +62,21 @@ body {
     background: white;
     overflow-y: auto;
     z-index: 3;
-
   }
-    li {
-      //border-bottom: 1px solid grey;
-      padding: 2px;
-      &:hover {
-        background-color: #eeeeee;
-      }
-      &.selected {
-        background-color: #f2f2f2;
-      }
+
+  li {
+    //border-bottom: 1px solid grey;
+    padding: 2px;
+
+    &:hover {
+      background-color: #eeeeee;
     }
+
+    &.selected {
+      background-color: #f2f2f2;
+    }
+  }
+
   .dropdown-title {
     margin-left: 10px;
   }

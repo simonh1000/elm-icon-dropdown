@@ -106,17 +106,23 @@ view constructor state lst currKey =
 
 keyHandler : List String -> State -> String -> Int -> Result String ( State, Maybe String )
 keyHandler keys state currKey keyCode =
+    let
+        openAtCurrent =
+            -- down (like DOM select, open with current value)
+            Ok ( { state | expanded = Just <| Maybe.withDefault currKey state.expanded }, Nothing )
+    in
     case ( state.expanded, keyCode ) of
+        ( Nothing, _ ) ->
+            if L.member keyCode [ 38, 40 ] then
+                -- up/down
+                openAtCurrent
+
+            else
+                Err "Unused key"
+
         ( Just hovered, 40 ) ->
             -- down
             Ok ( { state | expanded = Just <| moveDown keys hovered }, Nothing )
-
-        ( Nothing, 40 ) ->
-            -- down (like DOM select, open with current value)
-            Ok ( { state | expanded = Just <| Maybe.withDefault currKey state.expanded }, Nothing )
-
-        ( Nothing, _ ) ->
-            Err "Unused key"
 
         ( Just hovered, 38 ) ->
             -- up

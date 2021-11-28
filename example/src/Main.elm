@@ -81,7 +81,7 @@ view model =
     in
     div [ class "container p-2" ]
         [ h1 [ class "text-2xl font-bold ml-2" ] [ text "My Form" ]
-        , div [ class "flex flex-row items-center" ]
+        , div [ class "flex flex-col" ]
             [ formWrapper "name" <| input [] []
             , formWrapper "state (my dropdown)" <| D.view OnDropDownClick model.dState items model.selectedVal
             , formWrapper "city" <| input [] []
