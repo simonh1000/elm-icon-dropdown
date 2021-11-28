@@ -22,9 +22,9 @@ const prod = {
     },
     plugins: [
         // Copy static assets
-        new CopyWebpackPlugin({
-            patterns: [{from: "src/assets"}]
-        }),
+        // new CopyWebpackPlugin({
+        //     patterns: [{from: "src/assets"}]
+        // }),
         new MiniCssExtractPlugin({
             // Options similar to the same options in webpackOptions.output
             filename: "[name]-[chunkhash].css"
